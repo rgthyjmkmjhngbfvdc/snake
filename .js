@@ -68,6 +68,56 @@ function updateDirection() {
   }
 }
 
+function cloneBody(body) {
+  var copy = [];
+  for (var i = 0; i < body.length; i++) {
+    copy.push({x: body[i].x, y: body[i].y});
+  }
+  return copy;
+}
+
+function floodFillSpace(body, allowTail) {
+  if (body.length === 0) {
+    return 0;
+  }
+  var visited = [];
+  var blocked = [];
+  for (var i = 0; i < cols * rows; i++) {
+    visited.push(false);
+    blocked.push(false);
+  }
+  for (var j = 0; j < body.length; j++) {
+    if (j === 0) {
+      continue;
+    }
+    if (allowTail && j === body.length - 1) {
+      continue;
+    }
+    blocked[cellIndex(body[j].x, body[j].y)] = true;
+  }
+  var queue = [{x: body[0].x, y: body[0].y}];
+  visited[cellIndex(body[0].x, body[0].y)] = true;
+  var dirs = [{x: 1, y: 0}, {x: -1, y: 0}, {x: 0, y: 1}, {x: 0, y: -1}];
+  var count = 0;
+  while (queue.length > 0) {
+    var current = queue.shift();
+    count++;
+    for (var d = 0; d < dirs.length; d++) {
+      var nx = current.x + dirs[d].x;
+      var ny = current.y + dirs[d].y;
+      if (nx < 0 || nx >= cols || ny < 0 || ny >= rows) {
+        continue;
+      }
+      var idx = cellIndex(nx, ny);
+      if (!visited[idx] && !blocked[idx]) {
+        visited[idx] = true;
+        queue.push({x: nx, y: ny});
+      }
+    }
+  }
+  return count;
+}
+
 function moveSnake() {
   updateDirection();
   var head = {x: snake[0].x + direction.x, y: snake[0].y + direction.y};
@@ -246,10 +296,7 @@ function bfsPath(start, target, body, allowTail) {
 }
 
 function simulatePath(path) {
-  var body = [];
-  for (var i = 0; i < snake.length; i++) {
-    body.push({x: snake[i].x, y: snake[i].y});
-  }
+  var body = cloneBody(snake);
   var grow = false;
   for (var step = 0; step < path.length; step++) {
     var next = path[step];
@@ -263,13 +310,32 @@ function simulatePath(path) {
   return body;
 }
 
+function evaluateImmediateMove(move) {
+  var head = snake[0];
+  var target = {x: head.x + move.x, y: head.y + move.y};
+  if (isBlocked(target.x, target.y, snake, true, null)) {
+    return null;
+  }
+  var body = cloneBody(snake);
+  body.unshift({x: target.x, y: target.y});
+  if (!(target.x === food.x && target.y === food.y)) {
+    body.pop();
+  }
+  var space = floodFillSpace(body, true);
+  var distance = Math.abs(target.x - food.x) + Math.abs(target.y - food.y);
+  var tail = snake[snake.length - 1];
+  var tailDist = Math.abs(target.x - tail.x) + Math.abs(target.y - tail.y);
+  var score = space * 100 - distance * 3 + tailDist;
+  return {path: [{x: target.x, y: target.y}], score: score};
+}
+
 function bestAIMove() {
   var head = {x: snake[0].x, y: snake[0].y};
   var bodyToFood = bfsPath(head, food, snake, true);
   if (bodyToFood) {
     var simulated = simulatePath(bodyToFood);
     var tail = simulated[simulated.length - 1];
-    if (bfsPath(simulated[0], tail, simulated, true)) {
+    if (bfsPath(simulated[0], tail, simulated, true) && floodFillSpace(simulated, true) >= simulated.length) {
       return bodyToFood;
     }
   }
@@ -278,12 +344,15 @@ function bestAIMove() {
     return tailFallback;
   }
   var dirs = [{x: 1, y: 0}, {x: -1, y: 0}, {x: 0, y: 1}, {x: 0, y: -1}];
+  var best = null;
   for (var i = 0; i < dirs.length; i++) {
-    var nx = head.x + dirs[i].x;
-    var ny = head.y + dirs[i].y;
-    if (!isBlocked(nx, ny, snake, false, null)) {
-      return [{x: nx, y: ny}];
+    var result = evaluateImmediateMove(dirs[i]);
+    if (result && (!best || result.score > best.score)) {
+      best = result;
     }
+  }
+  if (best) {
+    return best.path;
   }
   return null;
 }

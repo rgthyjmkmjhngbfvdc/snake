@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neon Snake Clash</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <div class="hero__inner">
+      <p class="hero__eyebrow">Arcade Showcase</p>
+      <h1 class="hero__title">Neon Snake Clash</h1>
+      <p class="hero__subtitle">
+        A modern take on the classic Snake duel. Race against a cunning AI rival, watch glowing trails streak across the grid, and claim the high score crown.
+      </p>
+      <div class="hero__actions">
+        <a class="button button--primary" href="game.html">Play the Game</a>
+        <a class="button button--ghost" href="#features">Discover the Features</a>
+      </div>
+    </div>
+    <div class="hero__art">
+      <div class="grid-preview">
+        <div class="grid-preview__snake grid-preview__snake--player"></div>
+        <div class="grid-preview__snake grid-preview__snake--rival"></div>
+        <div class="grid-preview__food"></div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="features" class="section features">
+      <h2 class="section__title">Built for Competitive Snake Fans</h2>
+      <div class="feature-grid">
+        <article class="feature-card">
+          <h3>Arcade-Ready Controls</h3>
+          <p>Switch between manual and assisted play instantly. Queue moves, dash through tight turns, and let the AI lend a hand when the rival gets too fierce.</p>
+        </article>
+        <article class="feature-card">
+          <h3>Smart Rival AI</h3>
+          <p>A dedicated rival snake plots safe paths using breadth-first search, simulating future states to avoid traps and keep the pressure on your run.</p>
+        </article>
+        <article class="feature-card">
+          <h3>Dynamic Arena</h3>
+          <p>Glow-infused tiles, layered fruit sprites, and animated heads bring the arena to life, whether you are practicing or streaming the ultimate duel.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section highlights">
+      <div class="highlight">
+        <div class="highlight__media"></div>
+        <div class="highlight__text">
+          <h3>Battle-Tested Strategy</h3>
+          <p>
+            The rival studies every move, ensuring the board always feels alive. Advanced pathfinding keeps both snakes darting toward fruit, while a safety check prevents reckless dives into corners.
+          </p>
+        </div>
+      </div>
+      <div class="highlight highlight--reverse">
+        <div class="highlight__media highlight__media--score"></div>
+        <div class="highlight__text">
+          <h3>Track Your Progress</h3>
+          <p>
+            Real-time scorecards, AI status indicators, and respawn timers provide clarity at a glance. Share your best runs and invite friends to take on the glowing gauntlet.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer__inner">
+      <p class="footer__title">Ready to challenge the grid?</p>
+      <a class="button button--primary" href="game.html">Jump into Neon Snake Clash</a>
+      <p class="footer__note">Crafted for Code.org and the open web. Built by fans of fast-paced arcade classics.</p>
+    </div>
+  </footer>
+</body>
+</html>

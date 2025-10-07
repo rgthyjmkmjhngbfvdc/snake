@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Play Neon Snake Clash</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="game.css" />
+</head>
+<body>
+  <div class="game-page">
+    <header class="game-header">
+      <a class="logo" href="index.html">Neon Snake Clash</a>
+      <nav class="header-actions">
+        <a class="header-link" href="index.html">Overview</a>
+        <a class="header-link" href="#" id="resetLink">Restart</a>
+      </nav>
+    </header>
+
+    <main class="game-main">
+      <aside class="hud">
+        <section class="score-card score-card--player">
+          <header>
+            <span class="label">Player</span>
+            <span class="status" id="playerStatus">Active</span>
+          </header>
+          <p class="score" id="playerScore">0</p>
+          <p class="hint">High Score: <span id="highScore">0</span></p>
+        </section>
+        <section class="score-card score-card--rival">
+          <header>
+            <span class="label">Rival AI</span>
+            <span class="status" id="rivalStatus">Hunting</span>
+          </header>
+          <p class="score" id="rivalScore">0</p>
+          <p class="hint" id="respawnCountdown">&nbsp;</p>
+        </section>
+        <section class="control-card">
+          <div class="control-card__row">
+            <span class="badge" id="aiBadge">Player AI: On</span>
+            <button class="button" id="aiToggle" type="button">Switch to Manual</button>
+          </div>
+          <p class="control-card__hint" id="controlHint">Press P to take manual control.</p>
+          <ul class="control-card__list">
+            <li><span>Manual:</span> Arrow keys or WASD to steer</li>
+            <li><span>Toggle AI:</span> Press P or use the button</li>
+            <li><span>Restart:</span> Press Space after a crash</li>
+          </ul>
+        </section>
+      </aside>
+
+      <section class="board">
+        <div class="board__frame">
+          <canvas id="gameCanvas" width="400" height="400" aria-label="Snake game board" role="img"></canvas>
+          <div class="overlay" id="overlay">
+            <div class="overlay__inner">
+              <h1 id="overlayTitle">Neon Snake Clash</h1>
+              <p id="overlaySubtitle">Race the rival to the fruit.</p>
+              <p class="overlay__prompt" id="overlayPrompt">Press Space or click to begin</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="game-footer">
+      <p>Developed for Code.org compatibility &amp; the modern web. Built with love for classic arcades.</p>
+    </footer>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>

@@ -8,6 +8,16 @@ var aiEnabled = true;
 var highScore = 0;
 var food = {x: 0, y: 0};
 var rivalRespawnTimer = 0;
+function rgb(r, g, b) {
+  return "rgb(" + Math.floor(r) + "," + Math.floor(g) + "," + Math.floor(b) + ")";
+}
+function parseRGB(col) {
+  if (typeof col === "string" && col.indexOf("rgb(") === 0) {
+    var inner = col.substring(4, col.length - 1).split(",");
+    return [parseInt(inner[0], 10), parseInt(inner[1], 10), parseInt(inner[2], 10)];
+  }
+  return [0, 0, 0];
+}
 var colors = {
   boardLight: rgb(44, 48, 64),
   boardDark: rgb(34, 37, 52),
@@ -18,8 +28,11 @@ var colors = {
   rivalDim: rgb(255, 139, 54),
   danger: rgb(255, 78, 113),
   text: rgb(224, 232, 255),
+  textDim: rgb(168, 180, 208),
   shadow: rgb(12, 14, 24),
-  glass: rgb(30, 36, 54)
+  glass: rgb(30, 36, 54),
+  glow: rgb(64, 255, 217),
+  rivalGlow: rgb(255, 208, 120)
 };
 var player = createSnakeEntity();
 var rival = createSnakeEntity();
@@ -270,154 +283,169 @@ function drawBoard() {
   }
 }
 
-function drawSnakeBody(entity, baseColor, tailColor) {
+function drawSnakeBody(entity, baseColor, tailColor, glowColor) {
   if (!entity.alive) {
     return;
   }
   for (var i = 0; i < entity.body.length; i++) {
     var ratio = entity.body.length > 1 ? i / (entity.body.length - 1) : 0;
-    var r = Math.floor(colorComponent(baseColor, 0) * (1 - ratio) + colorComponent(tailColor, 0) * ratio);
-    var g = Math.floor(colorComponent(baseColor, 1) * (1 - ratio) + colorComponent(tailColor, 1) * ratio);
-    var b = Math.floor(colorComponent(baseColor, 2) * (1 - ratio) + colorComponent(tailColor, 2) * ratio);
-    fill(rgb(r, g, b));
-    stroke(rgb(255, 255, 255));
-    strokeWeight(2);
-    rect(40 + entity.body[i].x * tileSize + 1, 40 + entity.body[i].y * tileSize + 1, tileSize - 2, tileSize - 2);
+    var blend = blendColor(tailColor, baseColor, 1 - ratio);
+    var highlight = blendColor(blend, glowColor, 0.2);
+    var tileX = 40 + entity.body[i].x * tileSize;
+    var tileY = 40 + entity.body[i].y * tileSize;
+    noStroke();
+    fill(highlight);
+    rect(tileX, tileY, tileSize, tileSize);
+    fill(blend);
+    rect(tileX + 2, tileY + 2, tileSize - 4, tileSize - 4);
+    if (i === 0) {
+      drawSnakeHead(tileX, tileY, entity.direction, blend, glowColor);
+    }
   }
   noStroke();
 }
 
-function colorComponent(col, index) {
-  if (col === colors.accent) {
-    if (index === 0) {
-      return 0;
-    }
-    if (index === 1) {
-      return 214;
-    }
-    return 163;
-  }
-  if (col === colors.accentDim) {
-    if (index === 0) {
-      return 0;
-    }
-    if (index === 1) {
-      return 180;
-    }
-    return 138;
-  }
-  if (col === colors.rival) {
-    if (index === 0) {
-      return 255;
-    }
-    if (index === 1) {
-      return 181;
-    }
-    return 71;
-  }
-  if (col === colors.rivalDim) {
-    if (index === 0) {
-      return 255;
-    }
-    if (index === 1) {
-      return 139;
-    }
-    return 54;
-  }
-  if (col === colors.danger) {
-    if (index === 0) {
-      return 255;
-    }
-    if (index === 1) {
-      return 78;
-    }
-    return 113;
-  }
-  if (col === colors.text) {
-    return 224;
-  }
-  if (col === colors.shadow) {
-    return 12;
-  }
-  if (col === colors.boardLight) {
-    return index === 0 ? 44 : index === 1 ? 48 : 64;
-  }
-  if (col === colors.boardDark) {
-    return index === 0 ? 34 : index === 1 ? 37 : 52;
-  }
-  if (col === colors.panel) {
-    return index === 0 ? 16 : index === 1 ? 21 : 36;
-  }
-  if (col === colors.glass) {
-    return index === 0 ? 30 : index === 1 ? 36 : 54;
-  }
-  return index === 0 ? 0 : 0;
+function blendColor(a, b, t) {
+  var ca = parseRGB(a);
+  var cb = parseRGB(b);
+  var r = ca[0] * (1 - t) + cb[0] * t;
+  var g = ca[1] * (1 - t) + cb[1] * t;
+  var bl = ca[2] * (1 - t) + cb[2] * t;
+  return rgb(r, g, bl);
+}
+
+function drawSnakeHead(tileX, tileY, direction, bodyColor, glowColor) {
+  var headSize = tileSize - 6;
+  var offset = 3;
+  fill(bodyColor);
+  rect(tileX + offset, tileY + offset, headSize, headSize);
+  fill(blendColor(bodyColor, glowColor, 0.5));
+  var eyeOffsetX = direction.x !== 0 ? direction.x * 4 : 4;
+  var eyeOffsetY = direction.y !== 0 ? direction.y * 4 : 4;
+  ellipse(tileX + tileSize / 2 - eyeOffsetX, tileY + tileSize / 2 - eyeOffsetY, 4, 4);
+  ellipse(tileX + tileSize / 2 + eyeOffsetX, tileY + tileSize / 2 + eyeOffsetY, 4, 4);
+  fill(rgb(20, 24, 32));
+  ellipse(tileX + tileSize / 2 - eyeOffsetX, tileY + tileSize / 2 - eyeOffsetY, 2, 2);
+  ellipse(tileX + tileSize / 2 + eyeOffsetX, tileY + tileSize / 2 + eyeOffsetY, 2, 2);
 }
 
 function drawFood() {
+  var tileX = 40 + food.x * tileSize;
+  var tileY = 40 + food.y * tileSize;
+  fill(blendColor(colors.danger, colors.glass, 0.4));
+  rect(tileX + 2, tileY + 2, tileSize - 4, tileSize - 4);
   fill(colors.danger);
-  rect(40 + food.x * tileSize + 3, 40 + food.y * tileSize + 3, tileSize - 6, tileSize - 6);
+  rect(tileX + 4, tileY + 4, tileSize - 8, tileSize - 8);
   fill(colors.text);
-  ellipse(40 + food.x * tileSize + tileSize / 2, 40 + food.y * tileSize + 6, tileSize / 2, tileSize / 3);
+  ellipse(tileX + tileSize / 2, tileY + tileSize / 2 - 2, tileSize / 2, tileSize / 2);
+  fill(blendColor(colors.text, colors.danger, 0.5));
+  ellipse(tileX + tileSize / 2 - 2, tileY + tileSize / 2 - 4, tileSize / 4, tileSize / 5);
 }
 
 function drawPanel() {
+  drawPanelBackground();
+  drawScoreCard(52, 36, "PLAYER", player.score, player.alive ? "ACTIVE" : "ELIMINATED", colors.accent, colors.glow);
+  drawScoreCard(212, 36, "RIVAL", rival.score, rival.alive ? "HUNTING" : "RESPAWNING", colors.rival, colors.rivalGlow);
+  drawCenterStatus();
+  drawFooter();
+}
+
+function drawPanelBackground() {
+  noStroke();
   fill(colors.shadow);
   rect(0, 0, 400, 400);
   fill(colors.panel);
-  rect(20, 20, 360, 360);
-  fill(colors.shadow);
+  rect(18, 18, 364, 364);
+  fill(blendColor(colors.panel, colors.shadow, 0.5));
   rect(28, 28, 344, 344);
   fill(colors.panel);
-  rect(32, 32, 336, 336);
-  fill(colors.text);
+  rect(34, 34, 332, 332);
+}
+
+function drawScoreCard(x, y, label, score, status, baseColor, glowColor) {
+  var width = 136;
+  var height = 110;
+  noStroke();
+  fill(blendColor(colors.panel, glowColor, 0.22));
+  rect(x, y, width, height);
+  fill(colors.glass);
+  rect(x + 4, y + 4, width - 8, height - 8);
+  fill(baseColor);
   textAlign("left", "top");
-  textSize(16);
-  text("PLAYER", 40, 340);
-  textSize(28);
-  text(player.score, 40, 362);
-  textAlign("center", "top");
-  textSize(16);
+  textSize(14);
+  text(label, x + 12, y + 12);
+  textSize(32);
+  text(score, x + 12, y + 42);
+  textSize(12);
+  fill(status === "ACTIVE" || status === "HUNTING" ? glowColor : colors.textDim);
+  text(status, x + 12, y + 82);
+}
+
+function drawCenterStatus() {
+  var panelX = 60;
+  var panelY = 168;
+  var panelW = 280;
+  var panelH = 124;
+  noStroke();
+  fill(colors.glass);
+  rect(panelX, panelY, panelW, panelH);
+  fill(blendColor(colors.panel, colors.glass, 0.5));
+  rect(panelX + 6, panelY + 6, panelW - 12, panelH - 12);
+  textAlign("center", "center");
+  textSize(18);
   fill(aiEnabled ? colors.accent : colors.danger);
-  text(aiEnabled ? "PLAYER AI" : "PLAYER MANUAL", 200, 340);
-  fill(colors.text);
+  text(aiEnabled ? "PLAYER AI: ON" : "PLAYER AI: OFF", panelX + panelW / 2, panelY + 32);
   textSize(14);
-  text(player.alive ? "IN GAME" : "ELIMINATED", 200, 362);
-  textAlign("right", "top");
+  fill(colors.text);
+  var instructions = aiEnabled ? "Press P to take manual control" : "Press P to hand control to AI";
+  text(instructions, panelX + panelW / 2, panelY + 62);
+  var startHint = state === "start" ? "Press SPACE to begin the race" : state === "gameover" ? "Press SPACE to play again" : player.alive ? "Arrow/WASD to steer in manual" : "";
+  if (startHint.length > 0) {
+    fill(colors.textDim);
+    text(startHint, panelX + panelW / 2, panelY + 90);
+  }
+  if (!rival.alive) {
+    fill(colors.rival);
+    text("Rival respawns in " + Math.ceil(rivalRespawnTimer / 6), panelX + panelW / 2, panelY + 108);
+  }
+}
+
+function drawFooter() {
+  noStroke();
+  fill(colors.glass);
+  rect(60, 310, 280, 56);
+  fill(colors.text);
+  textAlign("center", "center");
   textSize(16);
-  text("RIVAL", 360, 340);
-  textSize(28);
-  text(rival.score, 360, 362);
-  textAlign("center", "top");
-  textSize(14);
-  fill(colors.text);
-  text("BEST " + highScore, 200, 384);
+  text("BEST SCORE " + highScore, 200, 330);
+  textSize(12);
+  fill(colors.textDim);
+  text("Collect fruit, stay alive, outrun the rival", 200, 348);
 }
 
 function drawStart() {
-  fill(colors.glass);
-  rect(60, 120, 280, 160);
-  fill(colors.text);
-  textAlign("center", "center");
-  textSize(44);
-  text("SNAKE", 200, 160);
-  textSize(18);
-  text("Race the rival for fruit", 200, 205);
-  text("Press SPACE to begin", 200, 238);
+  drawOverlayCard("Neon Snake Clash", "Race the AI rival for fruit", "Press SPACE to launch the duel", colors.accent);
 }
 
 function drawGameOver() {
-  fill(colors.shadow);
-  rect(20, 20, 360, 360);
+  drawOverlayCard("Game Over", "You scored " + player.score, "Press SPACE to challenge again", colors.danger);
+}
+
+function drawOverlayCard(title, subtitle, prompt, accentColor) {
+  noStroke();
+  fill(blendColor(colors.shadow, accentColor, 0.4));
+  rect(48, 96, 304, 208);
   fill(colors.glass);
-  rect(70, 160, 260, 140);
-  fill(colors.text);
+  rect(58, 106, 284, 188);
+  fill(accentColor);
   textAlign("center", "center");
-  textSize(36);
-  text("Game Over", 200, 195);
-  textSize(20);
-  text("Score: " + player.score, 200, 235);
-  text("Press SPACE to restart", 200, 270);
+  textSize(32);
+  text(title, 200, 150);
+  textSize(16);
+  fill(colors.text);
+  text(subtitle, 200, 195);
+  fill(colors.textDim);
+  text(prompt, 200, 235);
 }
 function cellIndex(x, y) {
   return y * cols + x;
@@ -641,8 +669,8 @@ function draw() {
   drawPanel();
   drawBoard();
   if (state === "start") {
-    drawSnakeBody(player, colors.accent, colors.accentDim);
-    drawSnakeBody(rival, colors.rival, colors.rivalDim);
+    drawSnakeBody(player, colors.accent, colors.accentDim, colors.glow);
+    drawSnakeBody(rival, colors.rival, colors.rivalDim, colors.rivalGlow);
     drawFood();
     drawStart();
     return;
@@ -669,8 +697,8 @@ function draw() {
       }
     }
   }
-  drawSnakeBody(player, colors.accent, colors.accentDim);
-  drawSnakeBody(rival, colors.rival, colors.rivalDim);
+  drawSnakeBody(player, colors.accent, colors.accentDim, colors.glow);
+  drawSnakeBody(rival, colors.rival, colors.rivalDim, colors.rivalGlow);
   drawFood();
   if (state === "gameover") {
     drawGameOver();

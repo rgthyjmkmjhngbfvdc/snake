@@ -11,6 +11,17 @@ var rivalRespawnTimer = 0;
 function rgb(r, g, b) {
   return "rgb(" + Math.floor(r) + "," + Math.floor(g) + "," + Math.floor(b) + ")";
 }
+function drawTextAligned(str, x, y, size, align, vertical) {
+  textAlign(align);
+  textSize(size);
+  var offset = 0;
+  if (vertical === "top") {
+    offset = size * 0.78;
+  } else if (vertical === "center") {
+    offset = size * 0.32;
+  }
+  text(str, x, y + offset);
+}
 function parseRGB(col) {
   if (typeof col === "string" && col.indexOf("rgb(") === 0) {
     var inner = col.substring(4, col.length - 1).split(",");
@@ -371,14 +382,10 @@ function drawScoreCard(x, y, label, score, status, baseColor, glowColor) {
   fill(colors.glass);
   rect(x + 4, y + 4, width - 8, height - 8);
   fill(baseColor);
-  textAlign("left", "top");
-  textSize(14);
-  text(label, x + 12, y + 12);
-  textSize(32);
-  text(score, x + 12, y + 42);
-  textSize(12);
+  drawTextAligned(label, x + 12, y + 12, 14, "left", "top");
+  drawTextAligned(score, x + 12, y + 42, 32, "left", "top");
   fill(status === "ACTIVE" || status === "HUNTING" ? glowColor : colors.textDim);
-  text(status, x + 12, y + 82);
+  drawTextAligned(status, x + 12, y + 82, 12, "left", "top");
 }
 
 function drawCenterStatus() {
@@ -391,22 +398,20 @@ function drawCenterStatus() {
   rect(panelX, panelY, panelW, panelH);
   fill(blendColor(colors.panel, colors.glass, 0.5));
   rect(panelX + 6, panelY + 6, panelW - 12, panelH - 12);
-  textAlign("center", "center");
-  textSize(18);
+  var centerX = panelX + panelW / 2;
   fill(aiEnabled ? colors.accent : colors.danger);
-  text(aiEnabled ? "PLAYER AI: ON" : "PLAYER AI: OFF", panelX + panelW / 2, panelY + 32);
-  textSize(14);
+  drawTextAligned(aiEnabled ? "PLAYER AI: ON" : "PLAYER AI: OFF", centerX, panelY + 32, 18, "center", "center");
   fill(colors.text);
   var instructions = aiEnabled ? "Press P to take manual control" : "Press P to hand control to AI";
-  text(instructions, panelX + panelW / 2, panelY + 62);
+  drawTextAligned(instructions, centerX, panelY + 62, 14, "center", "center");
   var startHint = state === "start" ? "Press SPACE to begin the race" : state === "gameover" ? "Press SPACE to play again" : player.alive ? "Arrow/WASD to steer in manual" : "";
   if (startHint.length > 0) {
     fill(colors.textDim);
-    text(startHint, panelX + panelW / 2, panelY + 90);
+    drawTextAligned(startHint, centerX, panelY + 90, 12, "center", "center");
   }
   if (!rival.alive) {
     fill(colors.rival);
-    text("Rival respawns in " + Math.ceil(rivalRespawnTimer / 6), panelX + panelW / 2, panelY + 108);
+    drawTextAligned("Rival respawns in " + Math.ceil(rivalRespawnTimer / 6), centerX, panelY + 108, 12, "center", "center");
   }
 }
 
@@ -415,12 +420,9 @@ function drawFooter() {
   fill(colors.glass);
   rect(60, 310, 280, 56);
   fill(colors.text);
-  textAlign("center", "center");
-  textSize(16);
-  text("BEST SCORE " + highScore, 200, 330);
-  textSize(12);
+  drawTextAligned("BEST SCORE " + highScore, 200, 330, 16, "center", "center");
   fill(colors.textDim);
-  text("Collect fruit, stay alive, outrun the rival", 200, 348);
+  drawTextAligned("Collect fruit, stay alive, outrun the rival", 200, 348, 12, "center", "center");
 }
 
 function drawStart() {
@@ -438,14 +440,11 @@ function drawOverlayCard(title, subtitle, prompt, accentColor) {
   fill(colors.glass);
   rect(58, 106, 284, 188);
   fill(accentColor);
-  textAlign("center", "center");
-  textSize(32);
-  text(title, 200, 150);
-  textSize(16);
+  drawTextAligned(title, 200, 150, 32, "center", "center");
   fill(colors.text);
-  text(subtitle, 200, 195);
+  drawTextAligned(subtitle, 200, 195, 16, "center", "center");
   fill(colors.textDim);
-  text(prompt, 200, 235);
+  drawTextAligned(prompt, 200, 235, 14, "center", "center");
 }
 function cellIndex(x, y) {
   return y * cols + x;

@@ -6,6 +6,7 @@ var state = "start";
 var score = 0;
 var highScore = 0;
 var moveCounter = 0;
+var aiEnabled = true;
 var snake = [];
 var direction = {x: 0, y: 0};
 var directionQueue = [];
@@ -97,17 +98,23 @@ function endGame() {
 }
 
 function handleInput() {
-  if (keyWentDown("left") || keyWentDown("a")) {
-    queueDirection(-1, 0);
+  if (!aiEnabled) {
+    if (keyWentDown("left") || keyWentDown("a")) {
+      queueDirection(-1, 0);
+    }
+    if (keyWentDown("right") || keyWentDown("d")) {
+      queueDirection(1, 0);
+    }
+    if (keyWentDown("up") || keyWentDown("w")) {
+      queueDirection(0, -1);
+    }
+    if (keyWentDown("down") || keyWentDown("s")) {
+      queueDirection(0, 1);
+    }
   }
-  if (keyWentDown("right") || keyWentDown("d")) {
-    queueDirection(1, 0);
-  }
-  if (keyWentDown("up") || keyWentDown("w")) {
-    queueDirection(0, -1);
-  }
-  if (keyWentDown("down") || keyWentDown("s")) {
-    queueDirection(0, 1);
+  if (keyWentDown("p")) {
+    aiEnabled = !aiEnabled;
+    directionQueue = [];
   }
   if (state === "start" && (keyWentDown("space") || keyWentDown("enter"))) {
     state = "play";
@@ -171,6 +178,124 @@ function drawPanel() {
   text("BEST", 360, 350);
   textSize(30);
   text(highScore, 360, 372);
+  textAlign("center", "top");
+  textSize(16);
+  fill(aiEnabled ? colors.accent : colors.danger);
+  text(aiEnabled ? "AI ACTIVE" : "PLAYER", 200, 352);
+}
+
+function cellIndex(x, y) {
+  return y * cols + x;
+}
+
+function isBlocked(x, y, body, allowTail, target) {
+  if (x < 0 || x >= cols || y < 0 || y >= rows) {
+    return true;
+  }
+  for (var i = 0; i < body.length; i++) {
+    if (body[i].x === x && body[i].y === y) {
+      if (allowTail && i === body.length - 1) {
+        return false;
+      }
+      if (target && target.x === x && target.y === y) {
+        return false;
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
+function bfsPath(start, target, body, allowTail) {
+  if (start.x === target.x && start.y === target.y) {
+    return [];
+  }
+  var queue = [start];
+  var visited = [];
+  var prev = [];
+  for (var i = 0; i < cols * rows; i++) {
+    visited.push(false);
+    prev.push(-1);
+  }
+  visited[cellIndex(start.x, start.y)] = true;
+  var dirs = [{x: 1, y: 0}, {x: -1, y: 0}, {x: 0, y: 1}, {x: 0, y: -1}];
+  while (queue.length > 0) {
+    var current = queue.shift();
+    if (current.x === target.x && current.y === target.y) {
+      var path = [];
+      var idx = cellIndex(current.x, current.y);
+      while (prev[idx] !== -1) {
+        path.unshift({x: current.x, y: current.y});
+        idx = prev[idx];
+        current = {x: idx % cols, y: Math.floor(idx / cols)};
+      }
+      return path;
+    }
+    for (var d = 0; d < dirs.length; d++) {
+      var nx = current.x + dirs[d].x;
+      var ny = current.y + dirs[d].y;
+      var nidx = cellIndex(nx, ny);
+      if (!isBlocked(nx, ny, body, allowTail, target) && !visited[nidx]) {
+        visited[nidx] = true;
+        prev[nidx] = cellIndex(current.x, current.y);
+        queue.push({x: nx, y: ny});
+      }
+    }
+  }
+  return null;
+}
+
+function simulatePath(path) {
+  var body = [];
+  for (var i = 0; i < snake.length; i++) {
+    body.push({x: snake[i].x, y: snake[i].y});
+  }
+  var grow = false;
+  for (var step = 0; step < path.length; step++) {
+    var next = path[step];
+    body.unshift({x: next.x, y: next.y});
+    if (!grow && next.x === food.x && next.y === food.y) {
+      grow = true;
+    } else {
+      body.pop();
+    }
+  }
+  return body;
+}
+
+function bestAIMove() {
+  var head = {x: snake[0].x, y: snake[0].y};
+  var bodyToFood = bfsPath(head, food, snake, true);
+  if (bodyToFood) {
+    var simulated = simulatePath(bodyToFood);
+    var tail = simulated[simulated.length - 1];
+    if (bfsPath(simulated[0], tail, simulated, true)) {
+      return bodyToFood;
+    }
+  }
+  var tailFallback = bfsPath(head, snake[snake.length - 1], snake, true);
+  if (tailFallback) {
+    return tailFallback;
+  }
+  var dirs = [{x: 1, y: 0}, {x: -1, y: 0}, {x: 0, y: 1}, {x: 0, y: -1}];
+  for (var i = 0; i < dirs.length; i++) {
+    var nx = head.x + dirs[i].x;
+    var ny = head.y + dirs[i].y;
+    if (!isBlocked(nx, ny, snake, false, null)) {
+      return [{x: nx, y: ny}];
+    }
+  }
+  return null;
+}
+
+function applyAIMove() {
+  var plan = bestAIMove();
+  if (plan && plan.length > 0) {
+    directionQueue = [];
+    var next = plan[0];
+    var head = snake[0];
+    queueDirection(next.x - head.x, next.y - head.y);
+  }
 }
 
 function drawStart() {
@@ -211,6 +336,9 @@ function draw() {
     return;
   }
   if (state === "play") {
+    if (aiEnabled) {
+      applyAIMove();
+    }
     moveCounter++;
     if (moveCounter >= moveDelay) {
       moveSnake();
